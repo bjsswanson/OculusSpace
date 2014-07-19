@@ -1,50 +1,55 @@
-var camera, scene, renderer;
-var effect, oculusControl;
-var clock = new THREE.Clock();
+var SPACE = window.SPACE || {};
 
-init();
-animate();
+SPACE.Scene = new THREE.Scene();
 
-function init() {
-	renderer = new THREE.WebGLRenderer();
-	renderer.setSize( window.innerWidth, window.innerHeight );
+SPACE.Utils = {
+	million : function( v ) {
+		return v * 1000000;
+	},
 
-	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 1, 5000 );
+	billion: function( v ) {
+		return SPACE.Utils.million( v ) * 1000;
+	},
 
-	scene = new THREE.Scene();
-
-	effect = new THREE.OculusRiftEffect( renderer, { worldScale: 1 } );
-	effect.setSize( window.innerWidth, window.innerHeight );
-
-	oculusControl = new THREE.OculusControls( camera );
-
-	document.body.appendChild( renderer.domElement );
-
-	window.addEventListener( 'resize', onWindowResize, false );
-
-	oculusControl.connect();
-}
-
-function onWindowResize() {
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
-	effect.setSize( window.innerWidth, window.innerHeight );
-}
-
-function keyPressed(event) {
-	if (event.keyCode === 72) { // H
-
+	loadTexture : function( image, callback ) {
+		if(callback == undefined) {
+			callback = function(){};
+		}
+		return THREE.ImageUtils.loadTexture(image, null, callback);
 	}
+};
+
+SPACE.Lights = function() {
+	var ambientLight = new THREE.AmbientLight( 0x888888 );
+	SPACE.Scene.add( ambientLight );
+
+	return {
+		ambient: ambientLight
+	}
+}();
+
+SPACE.Earth = function() {
+	var geometry = new THREE.SphereGeometry(637, 64, 64);
+	var material = new THREE.MeshPhongMaterial();
+	material.map = SPACE.Utils.loadTexture('img/earth/earthmap4k.jpg');
+	material.bumpMap = SPACE.Utils.loadTexture('img/earth/earthbump1k.jpg');
+	material.bumpScale = 0.05;
+	material.specularMap = SPACE.Utils.loadTexture('img/earth/earthspec1k.jpg');
+	material.specular = new THREE.Color('grey');
+
+	var mesh = new THREE.Mesh(geometry, material);
+	SPACE.Scene.add(mesh);
+
+	return {
+		mesh: mesh,
+		animate: function(){
+			mesh.rotation.y += THREE.Math.degToRad(0.01);
+		}
+	}
+}();
+
+
+SPACE.animate = function(){
+	SPACE.Earth.animate();
 }
 
-function animate() {
-	requestAnimationFrame( animate );
-
-	var t = clock.getElapsedTime();
-
-
-	controls.update( clock.getDelta() );
-	oculusControl.update( clock.getDelta() );
-
-	effect.render( scene, camera );
-}
